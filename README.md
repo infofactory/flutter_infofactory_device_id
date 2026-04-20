@@ -1,39 +1,73 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# infofactory_device_id
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages).
+`infofactory_device_id` e una libreria Flutter che espone un solo metodo pubblico:
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages).
--->
+- `getDeviceId()`
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+Il metodo restituisce un identificativo UUID (v4) del device/app-installation con queste regole:
 
-## Features
+1. Se l'UUID e gia in memoria, lo restituisce subito (massime performance).
+2. Se non e in memoria, prova a leggerlo da secure storage.
+3. Se non esiste (o e vuoto), genera un nuovo UUID, lo salva su secure storage e lo ritorna.
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+In questo modo l'ID resta stabile tra avvii successivi finche i dati persistiti sono disponibili.
 
-## Getting started
+## Caratteristiche
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+- API minima: un solo metodo pubblico.
+- UUID v4 generato automaticamente.
+- Cache in memoria per evitare I/O ripetuto.
+- Persistenza su `flutter_secure_storage`.
+- Gestione sicura di chiamate concorrenti durante la prima inizializzazione.
 
-## Usage
+## Installazione
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
+Aggiungi la dipendenza nel tuo `pubspec.yaml`:
 
-```dart
-const like = 'sample';
+```yaml
+dependencies:
+  infofactory_device_id:
+    git:
+      url: https://github.com/infofactory/flutter_infofactory_device_id.git
+      ref: main
 ```
 
-## Additional information
+Poi esegui:
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+```bash
+flutter pub get
+```
+
+## Utilizzo
+
+Importa la libreria e chiama `getDeviceId()`:
+
+```dart
+import 'package:infofactory_device_id/infofactory_device_id.dart';
+
+Future<void> loadDeviceId() async {
+  final deviceId = await getDeviceId();
+  // Usa deviceId per analytics, logging, correlazione eventi, ecc.
+}
+```
+
+## API pubblica
+
+```dart
+Future<String> getDeviceId()
+```
+
+Restituisce sempre una stringa UUID valida.
+
+## Dettagli di persistenza
+
+La libreria usa secure storage con chiave:
+
+- `infofactory_device_id`
+
+Comportamento atteso:
+
+- **Android**: in caso di "Clear data" dell'app, il valore viene cancellato.
+- **iOS**: il Keychain puo sopravvivere alla reinstallazione in diversi casi, ma non e una garanzia assoluta in ogni scenario.
+
+Se il requisito e "non perdere mai l'ID", e consigliata una strategia server-side (sincronizzazione con backend/account).
